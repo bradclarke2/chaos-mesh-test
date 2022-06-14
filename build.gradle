@@ -1,0 +1,34 @@
+plugins {
+	id 'org.springframework.boot' version '2.7.0'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'java'
+}
+
+group = 'com.bc'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation("com.nimbusds:nimbus-jose-jwt:9.23")
+	implementation 'dev.paseto:jpaseto-api:0.7.0'
+	implementation 'dev.paseto:jpaseto-impl:0.7.0'
+	implementation 'dev.paseto:jpaseto-jackson:0.7.0'
+	implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.13.3'
+	implementation 'commons-codec:commons-codec:1.15'
+
+
+	runtimeOnly 'org.postgresql:postgresql'
+	runtimeOnly 'org.postgresql:r2dbc-postgresql'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'io.projectreactor:reactor-test'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
