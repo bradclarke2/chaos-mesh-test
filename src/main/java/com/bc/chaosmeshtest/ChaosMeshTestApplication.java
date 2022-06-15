@@ -35,8 +35,11 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -45,6 +48,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -56,10 +60,41 @@ public class ChaosMeshTestApplication {
     public static final String STANDARD_FORMAT_CHARACTER = "\\.";
 
     public static void main(String[] args)
-            throws JOSEException, NoSuchAlgorithmException, NoSuchProviderException, IOException, DecoderException, ParseException {
+            throws JOSEException, NoSuchAlgorithmException, NoSuchProviderException, IOException, DecoderException, ParseException, InvalidKeyException {
+        hmacTest();
         jwtTest();
         pasetoTest();
         //		SpringApplication.run(ChaosMeshTestApplication.class, args);
+    }
+
+    private static void hmacTest() throws NoSuchAlgorithmException, InvalidKeyException, IOException {
+        System.out.println("------HMAC-------");
+
+        CustomClaims customClaims = new CustomClaims(UUID.randomUUID().toString(), Instant.now().toEpochMilli());
+        String key = UUID.randomUUID().toString();
+        String algorithm = "HmacSHA256";
+        SecretKeySpec secretKeySpec = new SecretKeySpec(key.getBytes(), algorithm);
+        Mac mac = Mac.getInstance(algorithm);
+        mac.init(secretKeySpec);
+
+        ObjectMapper mapper = new CBORMapper();
+        byte[] bytes = mapper.writeValueAsBytes(customClaims);
+
+        byte[] encodedClaims = Base64.getEncoder().withoutPadding().encode(bytes);
+        byte[] encodedSignature = Base64.getEncoder().withoutPadding().encode(mac.doFinal(bytes));
+
+        String encodedClaimsString = new String(encodedClaims, StandardCharsets.UTF_8);
+        String encodedSignatureString = new String(encodedSignature, StandardCharsets.UTF_8);
+
+        String concatPayload = encodedClaimsString + "-" + encodedSignatureString;
+
+        System.out.println(concatPayload);
+
+        byte[] decoded = Base64.getDecoder().decode(encodedSignatureString);
+
+        CustomClaims customClaimsDecoded = mapper.readValue(decoded, CustomClaims.class);
+
+        System.out.println(customClaimsDecoded.toString());
     }
 
     private static void jwtTest() throws JOSEException, IOException, DecoderException, ParseException {
@@ -159,6 +194,8 @@ public class ChaosMeshTestApplication {
 
         parsedResult.getClaims().forEach((key, value) -> System.out.println("key: " + key + " value: " + value));
     }
+
+
 
     private static String pasteoToCustomFormat(String paseto) {
         return paseto.replaceAll(STANDARD_FORMAT_CHARACTER, CUSTOM_FORMAT_CHARACTER);
