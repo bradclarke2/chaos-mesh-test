@@ -48,6 +48,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -90,9 +91,20 @@ public class ChaosMeshTestApplication {
 
         System.out.println(concatPayload);
 
-        byte[] decoded = Base64.getDecoder().decode(encodedSignatureString);
+        String[] split = concatPayload.split("-");
 
-        CustomClaims customClaimsDecoded = mapper.readValue(decoded, CustomClaims.class);
+        String claims = split[0];
+        String signature = split[1];
+
+
+        byte[] decodedClaims = Base64.getDecoder().decode(claims);
+        byte[] decodedSignature = Base64.getDecoder().decode(signature);
+
+        CustomClaims customClaimsDecoded = mapper.readValue(decodedClaims, CustomClaims.class);
+
+        if (Arrays.equals(mac.doFinal(decodedClaims), decodedSignature)){
+            System.out.println("it matches");
+        }
 
         System.out.println(customClaimsDecoded.toString());
     }
